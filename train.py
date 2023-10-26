@@ -8,13 +8,14 @@ from tqdm import tqdm
 import os
 
 training_data = ImageFolder('./pictures/train')
-testing_data = ImageFolder('./pictures/test')
-train_dataloader = DataLoader(training_data, batch_size=1, shuffle=True)
+testing_data = ImageFolder('./pictures/test2')
+train_dataloader = DataLoader(training_data, batch_size=10, shuffle=True)
 test_dataloader = DataLoader(testing_data, batch_size=1, shuffle=True)
 
 model = models.resnet18(pretrained=False)
 nr_filters = model.fc.in_features
 model.fc = nn.Linear(nr_filters, 1)
+model.to(torch.device('cuda'))
 
 loss_fn = BCEWithLogitsLoss()
 optimizer = torch.optim.Adam(model.fc.parameters())

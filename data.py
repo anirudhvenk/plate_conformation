@@ -26,7 +26,7 @@ class ImageFolder(Dataset):
         img = T.ToTensor()(img)
         
         if os.path.basename(path)[0] == '1':
-            return img, 1
+            return img.to(torch.device("cuda")), torch.tensor(1).to(torch.device("cuda"))
         else:
-            return img, 0
+            return img.to(torch.device("cuda")), torch.tensor(0).to(torch.device("cuda"))
 
