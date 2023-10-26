@@ -14,7 +14,10 @@ test_dataloader = DataLoader(testing_data, batch_size=1, shuffle=True)
 
 model = models.resnet18(pretrained=False)
 nr_filters = model.fc.in_features
-model.fc = nn.Linear(nr_filters, 1)
+model.fc = nn.Sequential(
+    nn.Dropout(0.5),
+    nn.Linear(nr_filters, 1),
+)
 
 loss_fn = BCEWithLogitsLoss()
 optimizer = torch.optim.Adam(model.fc.parameters())
