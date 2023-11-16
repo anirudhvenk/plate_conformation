@@ -1,25 +1,51 @@
+"""
+Outputs an inference (forward or backward plate) for a given image.
+
+Usage:
+    inference.py --img_path=<img_path> --weights_path=<weights_path>
+"""
 import torch
 from torch import nn
-import torchvision.transforms as T
-from torchvision import datasets, models, transforms
-import os
+from torchvision import models, datasets, transforms
+from torchvision import transforms
 from PIL import Image
-from model import Net
+from docopt import docopt
 
-model = models.resnet50(pretrained=True)
-nr_filters = model.fc.in_features
-model.fc = nn.Sequential(
+if __name__ == '__main__':
+    args = docopt(__doc__)
+    img_path = args['--img_path']
+    weights_path = args['--weights_path']
+
+    model = models.resnet18(pretrained=True)
+    for params in model.parameters():
+        params.requires_grad_ = False
+
+    nr_filters = model.fc.in_features
+    model.fc = nn.Sequential(
     nn.Dropout(0.5),
     nn.Linear(nr_filters, 1),
-)
-model.load_state_dict(torch.load('weights/model.ckpt.7'))
-model.eval()
-model.to('cuda')
+    )
+    model.to('cuda')
 
+    model.load_state_dict(torch.load(weights_path))
+    model.eval()
 
-for img in os.listdir('./pictures/cropped_test/backward'):
-    img = Image.open(os.path.join('./pictures/cropped_test/backward', img))
-    img = T.Resize(size=(224,224))(img)
-    img = T.ToTensor()(img).unsqueeze(0)
-    print(torch.sigmoid(model(img.to('cuda'))))
-    
+    test_transforms = transforms.Compose([
+    transforms.Resize(size=(232,232)),
+    transforms.CenterCrop((224,224)),
+    transforms.ToTensor(),
+    transforms.Normalize(
+        mean=[0.485, 0.456, 0.406],
+        std=[0.229, 0.224, 0.225],
+    ),
+    ])
+
+    raw_img = Image.open(img_path)
+    cropped = raw_img.crop((1300,1700,1600,2000))
+    img = test_transforms(cropped).unsqueeze(0).to('cuda')
+
+    with torch.no_grad():
+        y_hat = model(img)
+        prediction = torch.round(torch.sigmoid(y_hat)).cpu().numpy()
+
+    print("Prediction: ", prediction)
